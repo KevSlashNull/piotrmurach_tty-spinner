@@ -499,6 +499,18 @@ The result may look like this:
 └── [✖] two
 ```
 
+If you wish to also have manual control over the top-level spinner, set
+the `manual_stop` option. This keeps the top-level spinner spinning even
+if all currently registered spinners have finished. You can then, for
+example, add more spinners or call `multi_spinner.success` even if a
+spinner has errored.
+
+```ruby
+multi_spinner = TTY::Spinner::Multi.new("[:spinner] top", manual_stop: true)
+```
+
+See also the `examples/multi/multi_manual_stop.rb` example.
+
 #### 5.2.2 auto async tasks
 
 In case when you wish to execute async tasks and update individual spinners automatically, in any order, about their task status use `#register` and pass additional block parameter with the job to be executed.

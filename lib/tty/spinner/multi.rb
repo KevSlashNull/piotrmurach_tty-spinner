@@ -49,6 +49,10 @@ module TTY
       #   clear ouptut when finished
       # @option options [Float] :interval
       #   the interval for auto spinning
+      # @option options [Boolean] :manual_stop
+      #   the top spinner (if present) doesn't automatically stop when all
+      #   registered spinners have finished, allowing new spinners to be
+      #   added after that.
       #
       # @api public
       def initialize(*args)
@@ -56,6 +60,7 @@ module TTY
         @options = args.last.is_a?(::Hash) ? args.pop : {}
         message = args.empty? ? nil : args.pop
         @inset_opts = @options.delete(:style) { DEFAULT_INSET }
+        @manual_stop = @options.fetch(:manual_stop) { false }
         @rows = 0
         @spinners = []
         @spinners_count = 0
@@ -112,7 +117,7 @@ module TTY
           pattern_or_spinner
         else
           raise ArgumentError, "Expected a pattern or spinner, " \
-            "got: #{pattern_or_spinner.class}"
+                               "got: #{pattern_or_spinner.class}"
         end
       end
 
@@ -259,8 +264,8 @@ module TTY
       # @api public
       def on(key, &callback)
         unless @callbacks.key?(key)
-          raise ArgumentError, "The event #{key} does not exist. " \
-                               " Use :spin, :success, :error, or :done instead"
+          raise ArgumentError, "The event #{key} does not exist.  " \
+                               "Use :spin, :success, :error, or :done instead"
         end
         @callbacks[key] << callback
         self
@@ -317,6 +322,8 @@ module TTY
       # @api private
       def success_handler
         proc do
+          next if @manual_stop && @top_spinner
+
           if success?
             @top_spinner.success if @top_spinner
             emit(:success)
@@ -329,6 +336,8 @@ module TTY
       # @api private
       def error_handler
         proc do
+          next if @manual_stop && @top_spinner
+
           if error?
             @top_spinner.error if @top_spinner
             @fired ||= emit(:error) # fire once
@@ -341,6 +350,8 @@ module TTY
       # @api private
       def done_handler
         proc do
+          next if @manual_stop && @top_spinner
+
           if done?
             @top_spinner.stop if @top_spinner && !error? && !success?
             emit(:done)

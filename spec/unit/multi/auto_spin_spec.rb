@@ -28,5 +28,27 @@ RSpec.describe TTY::Spinner::Multi, "#auto_spin" do
     spinners.auto_spin
 
     expect(jobs).to match_array(%w[one two])
+    expect(spinners.top_spinner.done?).to be(true)
+  end
+
+  context "when manual_stop option is set" do
+    it "keeps the top level spinner spinning" do
+      spinners = TTY::Spinner::Multi.new("top", output: output, manual_stop: true)
+      jobs = []
+
+      spinners.register("one") { |sp| jobs << "one"; sp.success }
+      spinners.register("two") { |sp| jobs << "two"; sp.success }
+
+      spinners.auto_spin
+
+      spinner = spinners.register("three") { |sp| jobs << "three"; sp.success }
+      spinner.run
+
+      expect(jobs).to match_array(%w[one two three])
+
+      expect(spinners.top_spinner.done?).to be(false)
+      spinners.success
+      expect(spinners.top_spinner.done?).to be(true)
+    end
   end
 end
